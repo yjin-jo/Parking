@@ -2,11 +2,12 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/cl_row"
     android:layout_width="match_parent"
     android:layout_height="60dp">
 
     <TextView
-        android:id="@+id/tvItem"
+        android:id="@+id/tvRow"
         android:layout_width="351dp"
         android:layout_height="26dp"
         android:layout_marginStart="16dp"
