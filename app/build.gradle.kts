@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace = "dduwcom.mobile.finalreport"
+    namespace = "ddwu.com.mobile.finalreport"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "dduwcom.mobile.finalreport"
+        applicationId = "ddwu.com.mobile.finalreport"
         minSdk = 24
         targetSdk = 33
         versionCode = 1
@@ -38,7 +38,6 @@ android {
     buildFeatures {
         viewBinding = true
     }
-
 }
 
 dependencies {
@@ -57,5 +56,4 @@ dependencies {
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
 //     Glide
     implementation("com.github.bumptech.glide:glide:4.16.0")
-
 }
