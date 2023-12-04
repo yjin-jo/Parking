@@ -1,4 +1,4 @@
-package dduwcom.mobile.finalreport
+package ddwu.com.mobile.finalreport
 
 import org.junit.Test
 
