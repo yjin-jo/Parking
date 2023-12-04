@@ -1,11 +1,11 @@
-package dduwcom.mobile.finalreport.ui
+package ddwu.com.mobile.finalreport.ui
 
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import dduwcom.mobile.finalreport.data.Parking
-import dduwcom.mobile.finalreport.databinding.ListItemBinding
+import ddwu.com.mobile.finalreport.databinding.ListItemBinding
+import ddwu.com.mobile.finalreport.data.Parking
 
 
 
@@ -23,21 +23,8 @@ class ParkingAdapter : RecyclerView.Adapter<ParkingAdapter.ParkingHolder>() {
 
     override fun onBindViewHolder(holder: ParkingHolder, position: Int) {
         holder.itemBinding.tvRow.text = parkings?.get(position).toString()
-        holder.itemBinding.clRow.setOnClickListener{
-            clickListener?.onItemClick(it, position)
-        }
     }
 
     class ParkingHolder(val itemBinding: ListItemBinding) : RecyclerView.ViewHolder(itemBinding.root)
-
-    interface OnItemClickListner {
-        fun onItemClick(view: View, position: Int)
-    }
-
-    var clickListener: OnItemClickListner? = null
-
-    fun setOnItemClickListener(listener: OnItemClickListner) {
-        this.clickListener = listener
-    }
 
 }
