@@ -7,8 +7,9 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface ParkingAPIService {
-    @GET("{key}/json/GetParkingInfo/1/5/")
+    @GET("{key}/json/GetParkingInfo/1/{count}/{addr}")
     fun getParkingResult(@Path("key") key: String,
-                         @Query("addr") addr: String)
+                         @Path("count") count: Long,
+                         @Path("addr") addr: String)
     : Call<ParkingRoot>
 }
