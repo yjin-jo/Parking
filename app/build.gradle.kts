@@ -1,14 +1,16 @@
+import org.jetbrains.kotlin.storage.CacheResetOnProcessCanceled.enabled
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
 }
 
 android {
-    namespace = "dduwcom.mobile.finalreport"
+    namespace = "ddwu.com.mobile.finalreport"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "dduwcom.mobile.finalreport"
+        applicationId = "ddwu.com.mobile.finalreport"
         minSdk = 24
         targetSdk = 33
         versionCode = 1
@@ -33,6 +35,9 @@ android {
     kotlinOptions {
         jvmTarget = "1.8"
     }
+    buildFeatures {
+        viewBinding = true
+    }
 }
 
 dependencies {
@@ -44,4 +49,11 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
+
+//     Retrofit
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+//     Retrofit with Gson
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+//     Glide
+    implementation("com.github.bumptech.glide:glide:4.16.0")
 }
