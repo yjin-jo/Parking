@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">FinalReport_02_20210814</string>
-    <string name="parking_url">http://openapi.seoul.go.kr:8088/55784c6d68647077383668666d6e4b/xml/GetParkingInfo/1/5/</string>
+    <string name="parking_url">http://openapi.seoul.go.kr:8088/</string>
+    <string name="parking_key">55784c6d68647077383668666d6e4b</string>
 </resources>
