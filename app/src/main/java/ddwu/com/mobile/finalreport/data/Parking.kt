@@ -43,3 +43,5 @@ data class Parking(
     @SerializedName("HOLIDAY_END_TIME")
     var holidayEndTime: Long
 )
+
+
