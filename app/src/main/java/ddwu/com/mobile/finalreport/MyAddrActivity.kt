@@ -12,8 +12,10 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Looper
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationResult
@@ -25,14 +27,27 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.Marker
+import com.google.android.gms.maps.model.MarkerOptions
+import ddwu.com.mobile.finalreport.data.ParkingRoot
 import ddwu.com.mobile.finalreport.databinding.ActivityMyAddrBinding
+import ddwu.com.mobile.finalreport.databinding.ActivitySearchAddrBinding
+import ddwu.com.mobile.finalreport.network.ParkingAPIService
+import ddwu.com.mobile.finalreport.ui.ParkingAdapter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 import java.util.Locale
 
 class MyAddrActivity : AppCompatActivity() {
     private val TAG = "MyAddrActivityTag"
+    lateinit var searchAddrBinding : ActivitySearchAddrBinding
+    lateinit var adapter : ParkingAdapter
 
     val myAddrBinding by lazy {
         ActivityMyAddrBinding.inflate(layoutInflater)
@@ -43,6 +58,7 @@ class MyAddrActivity : AppCompatActivity() {
     private lateinit var currentLoc : Location
 
     private lateinit var googleMap : GoogleMap
+    var centerMarker : Marker? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(myAddrBinding.root)
@@ -50,6 +66,18 @@ class MyAddrActivity : AppCompatActivity() {
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         geocoder = Geocoder(this, Locale.getDefault())
         getLastLocation()   // 최종위치 확인
+
+        adapter = ParkingAdapter()
+        myAddrBinding.rvParking.adapter = adapter
+        myAddrBinding.rvParking.layoutManager = LinearLayoutManager(this)
+
+        val retrofit = Retrofit.Builder()
+            .baseUrl(resources.getString(R.string.parking_url))
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+
+        val service = retrofit.create(ParkingAPIService::class.java)
+        var totalCount : Long = 0
 
         myAddrBinding.btnPermit.setOnClickListener {
             checkPermissions()
@@ -59,13 +87,90 @@ class MyAddrActivity : AppCompatActivity() {
             getLastLocation()
         }
 
-        myAddrBinding.btnLocStart.setOnClickListener {
-            startLocUpdates()
+        myAddrBinding.btnSearch.setOnClickListener {
+            val targetAddr = myAddrBinding.tvAddr.text.toString()
+
+            val apiCallback_getTotalCount = object: Callback<ParkingRoot> {
+                override fun onResponse(call: Call<ParkingRoot>, response: Response<ParkingRoot>) {
+                    if (response.isSuccessful) {
+                        val root : ParkingRoot? = response.body()
+
+                        Log.d(TAG, "Root: $root")
+
+                        val parkingInfo = root?.getParkingInfo
+                        Log.d(TAG, "ParkingInfo: $parkingInfo")
+
+                        val parkings = parkingInfo?.parkings
+                        Log.d(TAG, "Parkings: $parkings")
+
+                        adapter.parkings = parkings
+                        Log.d(TAG, "First ParkingName: ${adapter.parkings?.get(0)?.parkingName ?: "null"}")
+
+                        totalCount = response.body()?.getParkingInfo?.listTotalCount ?: 0
+                        if(totalCount.toInt() == 0) {
+                            Toast.makeText(this@MyAddrActivity, "주차장이 없습니다.", Toast.LENGTH_SHORT).show()
+                            return
+                        }
+                        val apiCallback = object: Callback<ParkingRoot> {
+                            override fun onResponse(call: Call<ParkingRoot>, response: Response<ParkingRoot>) {
+                                if (response.isSuccessful) {
+                                    val root : ParkingRoot? = response.body()
+
+                                    Log.d(TAG, "Root: $root")
+
+                                    val parkingInfo = root?.getParkingInfo
+                                    Log.d(TAG, "ParkingInfo: $parkingInfo")
+
+                                    val parkings = parkingInfo?.parkings
+                                    Log.d(TAG, "Parkings: $parkings")
+
+                                    adapter.parkings = parkings
+                                    Log.d(TAG, "First ParkingName: ${adapter.parkings?.get(0)?.parkingName ?: "null"}")
+
+
+                                    adapter.parkings = root?.getParkingInfo?.parkings
+                                    Log.d(TAG, adapter.parkings?.get(0)?.parkingName ?: "null")
+                                    adapter.notifyDataSetChanged()
+                                }
+                                else {
+                                    Log.d(TAG, "Unsuccessful Response")
+                                }
+                            }
+
+                            override fun onFailure(call: Call<ParkingRoot>, t: Throwable) {
+                                Log.d(TAG, "OpenAPI Call Failure ${t.message}")
+                            }
+                        }
+
+                        val apiCall_2 = service.getParkingResult(resources.getString(R.string.parking_key), totalCount, targetAddr.toString())
+                        apiCall_2.enqueue(apiCallback)
+                    }
+                    else {
+                        Log.d(TAG, "Unsuccessful Response")
+                    }
+                }
+
+                override fun onFailure(call: Call<ParkingRoot>, t: Throwable) {
+                    Log.d(TAG, "OpenAPI Call Failure ${t.message}")
+                }
+            }
+
+            val apiCall_1 : Call<ParkingRoot> =
+                service.getParkingResult(resources.getString(R.string.parking_key), 5, targetAddr.toString())
+            Log.d(TAG, targetAddr)
+            Log.d(TAG, "요청 URL: ${apiCall_1.request().url()}")
+            Log.d(TAG, "요청 매개변수: key=${resources.getString(R.string.parking_key)}, addr=$targetAddr")
+            apiCall_1.enqueue(apiCallback_getTotalCount)
         }
 
-        myAddrBinding.btnLocStop.setOnClickListener {
-            fusedLocationClient.removeLocationUpdates(locCallback)
-        }
+
+//        myAddrBinding.btnLocStart.setOnClickListener {
+//            startLocUpdates()
+//        }
+//
+//        myAddrBinding.btnLocStop.setOnClickListener {
+//            fusedLocationClient.removeLocationUpdates(locCallback)
+//        }
 
         val mapFragment : SupportMapFragment
         = supportFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
@@ -79,6 +184,12 @@ class MyAddrActivity : AppCompatActivity() {
             googleMap = map
             Log.d(TAG, "GoogleMap is Ready")
         }
+    }
+
+    /* 마커 추가 */
+    fun addMarker(targetLoc : LatLng) {
+        val markerOptions = MarkerOptions()
+        markerOptions.position(targetLoc)
     }
     fun checkPermissions() {
         if (checkSelfPermission(ACCESS_FINE_LOCATION)
@@ -147,11 +258,12 @@ class MyAddrActivity : AppCompatActivity() {
             location ->
             if (location != null) {
                 val targetLoc: LatLng = LatLng(location.latitude, location.longitude)
-                googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(targetLoc, 17F))
+                googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(targetLoc, 12F))
                 geocoder.getFromLocation(location.latitude, location.longitude, 5){
                     addresses ->
                     CoroutineScope(Dispatchers.Main).launch {
-                        showData(addresses.get(0).getAddressLine(0))
+                        myAddrBinding.tvAddr.setText(addresses.get(0).subLocality.toString())
+                        showData(addresses.get(0).subLocality)
                     }
                 }
             }
