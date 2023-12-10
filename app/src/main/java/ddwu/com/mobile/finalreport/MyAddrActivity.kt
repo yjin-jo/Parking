@@ -26,6 +26,7 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
@@ -36,7 +37,9 @@ import ddwu.com.mobile.finalreport.network.ParkingAPIService
 import ddwu.com.mobile.finalreport.ui.ParkingAdapter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -59,6 +62,8 @@ class MyAddrActivity : AppCompatActivity() {
 
     private lateinit var googleMap : GoogleMap
     var centerMarker : Marker? = null
+    private lateinit var markers : List<Marker>
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(myAddrBinding.root)
@@ -107,6 +112,7 @@ class MyAddrActivity : AppCompatActivity() {
                         Log.d(TAG, "First ParkingName: ${adapter.parkings?.get(0)?.parkingName ?: "null"}")
 
                         totalCount = response.body()?.getParkingInfo?.listTotalCount ?: 0
+
                         if(totalCount.toInt() == 0) {
                             Toast.makeText(this@MyAddrActivity, "주차장이 없습니다.", Toast.LENGTH_SHORT).show()
                             return
@@ -130,6 +136,54 @@ class MyAddrActivity : AppCompatActivity() {
 
                                     adapter.parkings = root?.getParkingInfo?.parkings
                                     Log.d(TAG, adapter.parkings?.get(0)?.parkingName ?: "null")
+
+                                    /*주소를 위도,경도로 바꿔서 마커 표시*/
+                                    suspend fun getLatLngFromAddress(address: String): LatLng? {
+                                        return withContext(Dispatchers.IO) {
+                                            try {
+                                                val geocoder = Geocoder(this@MyAddrActivity, Locale.getDefault())
+                                                val addresses = geocoder.getFromLocationName(address, 1)
+
+                                                if (addresses!!.isNotEmpty()) {
+                                                    val latitude = addresses!![0].latitude
+                                                    val longitude = addresses[0].longitude
+                                                    LatLng(latitude, longitude)
+                                                } else {
+                                                    null
+                                                }
+                                            } catch (e: Exception) {
+                                                e.printStackTrace()
+                                                null
+                                            }
+                                        }
+                                    }
+                                    if (parkings != null) {
+                                        for (parking in parkings){
+//                                            geocoder.getFromLocationName(parking.parkingName, totalCount.toInt()) {
+//                                                    addresses ->
+//                                                CoroutineScope(Dispatchers.Main).launch {
+//                                                    if (addresses.isNotEmpty()) {
+//                                                        val targetLoc = LatLng(addresses[0].latitude, addresses[0].longitude)
+//                                                        addMarker(targetLoc)
+//                                                    } else {
+//                                                        // 주소를 찾을 수 없는 경우에 대한 처리
+//                                                        // 예를 들어, 토스트 메시지를 표시할 수 있습니다.
+//                                                        Toast.makeText(this@MyAddrActivity, "주소를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show()
+//                                                    }
+//                                                }
+//                                            }
+                                            CoroutineScope(Dispatchers.Main).launch {
+                                                val targetLoc = getLatLngFromAddress(parking.addr)
+
+                                                if (targetLoc != null) {
+                                                    addMarker(targetLoc)
+                                                } else {
+                                                    // 주소를 찾을 수 없는 경우에 대한 처리
+                                                    Toast.makeText(this@MyAddrActivity, "주소를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show()
+                                                }
+                                            }
+                                        }
+                                    }
                                     adapter.notifyDataSetChanged()
                                 }
                                 else {
@@ -183,6 +237,15 @@ class MyAddrActivity : AppCompatActivity() {
         override fun onMapReady(map: GoogleMap) {
             googleMap = map
             Log.d(TAG, "GoogleMap is Ready")
+
+            googleMap.setOnMarkerClickListener { marker
+                -> Toast.makeText(this@MyAddrActivity, marker.tag.toString(), Toast.LENGTH_SHORT).show()
+                false
+            }
+
+            googleMap.setOnInfoWindowClickListener { marker ->
+                Toast.makeText(this@MyAddrActivity, marker.title, Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -190,7 +253,15 @@ class MyAddrActivity : AppCompatActivity() {
     fun addMarker(targetLoc : LatLng) {
         val markerOptions = MarkerOptions()
         markerOptions.position(targetLoc)
+            .title("마커 제목")
+            .snippet("마커 말풍선")
+            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
+
+        centerMarker = googleMap.addMarker(markerOptions)
+        centerMarker?.showInfoWindow()
+        centerMarker?.tag = targetLoc
     }
+
     fun checkPermissions() {
         if (checkSelfPermission(ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED
