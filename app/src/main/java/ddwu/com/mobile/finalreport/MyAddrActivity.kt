@@ -3,6 +3,7 @@ package ddwu.com.mobile.finalreport
 import android.Manifest.permission.ACCESS_COARSE_LOCATION
 import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Geocoder
 import android.location.Location
@@ -12,6 +13,7 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Looper
 import android.util.Log
+import android.view.View
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
@@ -159,6 +161,14 @@ class MyAddrActivity : AppCompatActivity() {
                                     }
                                     if (parkings != null) {
                                         for (parking in parkings){
+                                            adapter.setOnItemClickListener(object : ParkingAdapter.OnItemClickListner {
+                                                override fun onItemClick(view: View, position: Int) {
+                                                    // 클릭된 주차장 정보를 다음 Activity로 전달하고 해당 Activity를 시작
+                                                    val intent = Intent(this@MyAddrActivity, ParkingDetailActivity::class.java)
+                                                    intent.putExtra("PARKING", parking)
+                                                    startActivity(intent)
+                                                }
+                                            })
 //                                            geocoder.getFromLocationName(parking.parkingName, totalCount.toInt()) {
 //                                                    addresses ->
 //                                                CoroutineScope(Dispatchers.Main).launch {
@@ -230,6 +240,8 @@ class MyAddrActivity : AppCompatActivity() {
         = supportFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
 
         mapFragment.getMapAsync(mapReadyCallback)
+
+
 
     }
 

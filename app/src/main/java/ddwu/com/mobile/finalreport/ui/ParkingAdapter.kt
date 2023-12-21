@@ -23,8 +23,17 @@ class ParkingAdapter : RecyclerView.Adapter<ParkingAdapter.ParkingHolder>() {
 
     override fun onBindViewHolder(holder: ParkingHolder, position: Int) {
         holder.itemBinding.tvRow.text = parkings?.get(position).toString()
+        holder.itemBinding.tvRow.setOnClickListener{
+            clickListener?.onItemClick(it, position)
+        }
     }
-
+    interface OnItemClickListner {
+        fun onItemClick(view: View, position: Int)
+    }
+    var clickListener: OnItemClickListner? = null
+    fun setOnItemClickListener(listener: OnItemClickListner) {
+        this.clickListener = listener
+    }
     class ParkingHolder(val itemBinding: ListItemBinding) : RecyclerView.ViewHolder(itemBinding.root)
 
 }
