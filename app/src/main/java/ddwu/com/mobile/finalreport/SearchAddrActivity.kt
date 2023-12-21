@@ -3,7 +3,11 @@ package ddwu.com.mobile.finalreport
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import android.widget.Toast
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.OnMapReadyCallback
+import com.google.android.gms.maps.SupportMapFragment
 import ddwu.com.mobile.finalreport.data.ParkingRoot
 
 import ddwu.com.mobile.finalreport.databinding.ActivitySearchAddrBinding
@@ -20,6 +24,8 @@ class SearchAddrActivity : AppCompatActivity() {
     private val TAG = "SearchAddrActivity"
     lateinit var searchAddrBinding : ActivitySearchAddrBinding
     lateinit var adapter : ParkingAdapter
+    private lateinit var googleMap : GoogleMap
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         searchAddrBinding = ActivitySearchAddrBinding.inflate(layoutInflater)
@@ -112,6 +118,27 @@ class SearchAddrActivity : AppCompatActivity() {
 
         }
 
+        val mapFragment : SupportMapFragment
+                = supportFragmentManager.findFragmentById(R.id.search_map) as SupportMapFragment
+
+        mapFragment.getMapAsync(mapReadyCallback)
+
+    }
+
+    val mapReadyCallback = object: OnMapReadyCallback {
+        override fun onMapReady(map: GoogleMap) {
+            googleMap = map
+            Log.d(TAG, "GoogleMap is Ready")
+
+            googleMap.setOnMarkerClickListener { marker
+                -> Toast.makeText(this@SearchAddrActivity, marker.tag.toString(), Toast.LENGTH_SHORT).show()
+                false
+            }
+
+            googleMap.setOnInfoWindowClickListener { marker ->
+                Toast.makeText(this@SearchAddrActivity, marker.title, Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
 
