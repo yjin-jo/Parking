@@ -1,18 +1,24 @@
 package ddwu.com.mobile.finalreport
 
+import android.location.Geocoder
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.LatLng
 import ddwu.com.mobile.finalreport.data.ParkingRoot
 
 import ddwu.com.mobile.finalreport.databinding.ActivitySearchAddrBinding
 import ddwu.com.mobile.finalreport.network.ParkingAPIService
 import ddwu.com.mobile.finalreport.ui.ParkingAdapter
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -25,11 +31,13 @@ class SearchAddrActivity : AppCompatActivity() {
     lateinit var searchAddrBinding : ActivitySearchAddrBinding
     lateinit var adapter : ParkingAdapter
     private lateinit var googleMap : GoogleMap
+    private lateinit var geocoder : Geocoder
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         searchAddrBinding = ActivitySearchAddrBinding.inflate(layoutInflater)
         setContentView(searchAddrBinding.root)
+        geocoder = Geocoder(this)
 
         adapter = ParkingAdapter()
         searchAddrBinding.rvParking.adapter = adapter
@@ -65,6 +73,21 @@ class SearchAddrActivity : AppCompatActivity() {
 
                         totalCount = response.body()?.getParkingInfo?.listTotalCount ?: 0
 
+                        geocoder.getFromLocationName(targetAddr, totalCount.toInt()) {
+                            addresses ->
+                            CoroutineScope(Dispatchers.Main).launch {
+                                if (addresses.isNotEmpty()) {
+                                    val targetLoc = LatLng(addresses[0].latitude, addresses[0].longitude)
+                                    googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(targetLoc, 12F))
+                                } else {
+                                    Toast.makeText(
+                                        this@SearchAddrActivity,
+                                        "해당 주소의 위치를 찾을 수 없습니다.",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            }
+                        }
                         val apiCallback = object: Callback<ParkingRoot> {
                             override fun onResponse(call: Call<ParkingRoot>, response: Response<ParkingRoot>) {
                                 if (response.isSuccessful) {
