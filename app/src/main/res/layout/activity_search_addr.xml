@@ -39,13 +39,37 @@
         app:layout_constraintStart_toEndOf="@+id/etAddr"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <fragment
+        android:id="@+id/search_map"
+        android:name="com.google.android.gms.maps.SupportMapFragment"
+        android:layout_width="372dp"
+        android:layout_height="240dp"
+
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="56dp"
+
+        app:cameraTargetLat="37.606537"
+        app:cameraTargetLng="127.041758"
+        app:cameraZoom="17"
+        app:layout_constraintBottom_toTopOf="@+id/rvParking"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.612"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/scrollView2"
+        app:layout_constraintVertical_bias="0.148"
+        app:mapType="normal"
+        app:uiZoomControls="true" />
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvParking"
-        android:layout_width="377dp"
-        android:layout_height="578dp"
-        android:layout_marginTop="136dp"
-        android:layout_marginEnd="16dp"
+        android:layout_width="358dp"
+        android:layout_height="235dp"
+        android:layout_marginTop="444dp"
+        android:layout_marginEnd="28dp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent">
+
+    </androidx.recyclerview.widget.RecyclerView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
