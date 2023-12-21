@@ -176,7 +176,7 @@ class MyAddrActivity : AppCompatActivity() {
                                                 val targetLoc = getLatLngFromAddress(parking.addr)
 
                                                 if (targetLoc != null) {
-                                                    addMarker(targetLoc)
+                                                    addMarker(targetLoc, parking.parkingName, parking.capacity.toInt(), parking.curParking.toInt())
                                                 } else {
                                                     // 주소를 찾을 수 없는 경우에 대한 처리
                                                     Toast.makeText(this@MyAddrActivity, "주소를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show()
@@ -250,18 +250,17 @@ class MyAddrActivity : AppCompatActivity() {
     }
 
     /* 마커 추가 */
-    fun addMarker(targetLoc : LatLng) {
+    fun addMarker(targetLoc: LatLng, parkingName: String, totalSpaces: Int, currentSpaces: Int) {
         val markerOptions = MarkerOptions()
         markerOptions.position(targetLoc)
-            .title("마커 제목")
-            .snippet("마커 말풍선")
+            .title(parkingName)
+            .snippet("잔여 : ${totalSpaces-currentSpaces}")
             .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
 
         centerMarker = googleMap.addMarker(markerOptions)
         centerMarker?.showInfoWindow()
         centerMarker?.tag = targetLoc
     }
-
     fun checkPermissions() {
         if (checkSelfPermission(ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED
