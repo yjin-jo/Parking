@@ -44,8 +44,21 @@ class ParkingDetailActivity : AppCompatActivity() {
         // parking 객체를 사용하여 원하는 작업 수행
         if (parking != null) {
             // 여기에서 parking 객체를 사용하는 코드 추가
-            parkingDetailBinding.tvName.setText(parking.parkingName.toString())
-            parkingDetailBinding.tvCount.setText("잔여 :  + ${parking.capacity-parking.curParking}")
+            parkingDetailBinding.tvName.text=parking.parkingName
+            parkingDetailBinding.tvCount.text="잔여 : ${parking.capacity-parking.curParking}"
+            parkingDetailBinding.tvDetailAddr.text=parking.addr
+            parkingDetailBinding.tvCapacity.text="총 주차면 : ${parking.capacity}면"
+            parkingDetailBinding.tvCurr.text="현재 주차 차량 수 : ${parking.curParking}대"
+            parkingDetailBinding.tvRate.text="기본 요금 : ${parking.timeRate}분 ${parking.rates}원"
+            parkingDetailBinding.tvAddRate.text="추가 요금 : ${parking.addTimeRate}분 당 ${parking.addRates}원"
+
+            parkingDetailBinding.tvWeek.text="평일 운영 시간 : ${getTime(parking.weekdayBeginTime.toString())}" +
+                    "~ ${getTime(parking.weekdayEndTime.toString())}"
+
+            parkingDetailBinding.tvHoli.text="공휴일 운영 시간 : ${getTime(parking.holidayBeginTime.toString())}" +
+                    "~ ${getTime(parking.holidayEndTime.toString())}"
+
+            parkingDetailBinding.tvTel.text="전화번호 : ${parking.tel}"
 
             geocoder.getFromLocationName(parking.parkingName, 1) {
                     addresses ->
@@ -91,7 +104,15 @@ class ParkingDetailActivity : AppCompatActivity() {
             }
         }
     }
-
+    fun getTime(time : String) : String{
+        if (time.length >= 4) {
+            val hour = time.substring(0, 2)
+            val min = time.substring(2, 4)
+            return "${hour}시 ${min}분"
+        } else {
+            return "00시 00분"
+        }
+    }
     /* 마커 추가 */
     fun addMarker(targetLoc: LatLng, parkingName: String, totalSpaces: Int, currentSpaces: Int) {
         val markerOptions = MarkerOptions()
