@@ -25,7 +25,7 @@
         android:layout_marginTop="72dp"
         android:ems="10"
         android:inputType="text"
-        android:text="Input Addr"
+        android:hint="구 단위로 입력"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -56,7 +56,6 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.612"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/scrollView2"
         app:layout_constraintVertical_bias="0.148"
         app:mapType="normal"
         app:uiZoomControls="true" />
