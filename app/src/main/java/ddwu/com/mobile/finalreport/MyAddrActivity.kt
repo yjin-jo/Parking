@@ -94,6 +94,10 @@ class MyAddrActivity : AppCompatActivity() {
             getLastLocation()
         }
 
+        myAddrBinding.btnMyAddrBack.setOnClickListener {
+            finish()
+        }
+
         myAddrBinding.btnSearch.setOnClickListener {
             val targetAddr = myAddrBinding.tvAddr.text.toString()
 
@@ -228,21 +232,10 @@ class MyAddrActivity : AppCompatActivity() {
             apiCall_1.enqueue(apiCallback_getTotalCount)
         }
 
-
-//        myAddrBinding.btnLocStart.setOnClickListener {
-//            startLocUpdates()
-//        }
-//
-//        myAddrBinding.btnLocStop.setOnClickListener {
-//            fusedLocationClient.removeLocationUpdates(locCallback)
-//        }
-
         val mapFragment : SupportMapFragment
         = supportFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
 
         mapFragment.getMapAsync(mapReadyCallback)
-
-
 
     }
 
@@ -313,9 +306,6 @@ class MyAddrActivity : AppCompatActivity() {
     val locCallback : LocationCallback = object : LocationCallback() {
         override fun onLocationResult(locResult: LocationResult) {
             val currentLoc : Location = locResult.locations[0]
-//            val targetLoc: LatLng = LatLng(currentLoc.latitude, currentLoc.longitude)
-//
-//            googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(targetLoc, 17F))
 
             geocoder.getFromLocation(currentLoc.latitude, currentLoc.longitude, 5) {
                 addresses ->
@@ -346,14 +336,13 @@ class MyAddrActivity : AppCompatActivity() {
                     addresses ->
                     CoroutineScope(Dispatchers.Main).launch {
                         myAddrBinding.tvAddr.setText(addresses.get(0).subLocality.toString())
-                        showData(addresses.get(0).subLocality)
                     }
                 }
             }
             else {
                 currentLoc = Location("기본 위치")      // Last Location 이 null 경우 기본으로 설정
-                currentLoc.latitude = 37.606816
-                currentLoc.longitude = 127.042383
+                currentLoc.latitude = 37.606537
+                currentLoc.longitude = 127.041758
             }
         }
     }

@@ -211,6 +211,9 @@ class SearchAddrActivity : AppCompatActivity() {
 
         mapFragment.getMapAsync(mapReadyCallback)
 
+        searchAddrBinding.btnSearchBack.setOnClickListener {
+            finish()
+        }
     }
 
     val mapReadyCallback = object: OnMapReadyCallback {

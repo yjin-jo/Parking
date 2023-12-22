@@ -35,6 +35,10 @@ class ParkingDetailActivity : AppCompatActivity() {
         setContentView(parkingDetailBinding.root)
         geocoder = Geocoder(this)
 
+        parkingDetailBinding.btnBack.setOnClickListener {
+            finish()
+        }
+
         // Intent를 가져오기
         val intent: Intent = intent
 
