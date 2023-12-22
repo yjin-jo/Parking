@@ -12,8 +12,10 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
+import com.google.android.gms.maps.model.MarkerOptions
 import ddwu.com.mobile.finalreport.data.Parking
 import ddwu.com.mobile.finalreport.databinding.ActivityParkingDetailBinding
 import kotlinx.coroutines.CoroutineScope
@@ -54,6 +56,8 @@ class ParkingDetailActivity : AppCompatActivity() {
                             "${parking.parkingName}, ${addresses[0].latitude}, ${addresses[0].longitude}",
                             Toast.LENGTH_SHORT).show()
                         googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(targetLoc, 12F))
+                        addMarker(targetLoc, parking.parkingName, parking.capacity.toInt(), parking.curParking.toInt())
+
                     } else {
                         Toast.makeText(
                             this@ParkingDetailActivity,
@@ -88,7 +92,18 @@ class ParkingDetailActivity : AppCompatActivity() {
         }
     }
 
+    /* 마커 추가 */
+    fun addMarker(targetLoc: LatLng, parkingName: String, totalSpaces: Int, currentSpaces: Int) {
+        val markerOptions = MarkerOptions()
+        markerOptions.position(targetLoc)
+            .title(parkingName)
+            .snippet("잔여 : ${totalSpaces-currentSpaces}")
+            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
 
+        centerMarker = googleMap.addMarker(markerOptions)
+        centerMarker?.showInfoWindow()
+        centerMarker?.tag = targetLoc
+    }
 
 }
 
