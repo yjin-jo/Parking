@@ -220,15 +220,6 @@ class SearchAddrActivity : AppCompatActivity() {
         override fun onMapReady(map: GoogleMap) {
             googleMap = map
             Log.d(TAG, "GoogleMap is Ready")
-
-            googleMap.setOnMarkerClickListener { marker
-                -> Toast.makeText(this@SearchAddrActivity, marker.tag.toString(), Toast.LENGTH_SHORT).show()
-                false
-            }
-
-            googleMap.setOnInfoWindowClickListener { marker ->
-                Toast.makeText(this@SearchAddrActivity, marker.title, Toast.LENGTH_SHORT).show()
-            }
         }
     }
 

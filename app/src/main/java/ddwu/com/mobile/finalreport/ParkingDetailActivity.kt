@@ -39,17 +39,13 @@ class ParkingDetailActivity : AppCompatActivity() {
             finish()
         }
 
-        // Intent를 가져오기
         val intent: Intent = intent
 
-        // Intent로 전달된 데이터 확인
         val parking: Parking? = intent.getSerializableExtra("PARKING") as Parking
 
-        // parking 객체를 사용하여 원하는 작업 수행
         if (parking != null) {
-            // 여기에서 parking 객체를 사용하는 코드 추가
             parkingDetailBinding.tvName.text=parking.parkingName
-            parkingDetailBinding.tvCount.text="잔여 : ${parking.capacity-parking.curParking}"
+            parkingDetailBinding.tvCount.text="${parking.capacity-parking.curParking} 자리 남았어요!"
             parkingDetailBinding.tvDetailAddr.text=parking.addr
             parkingDetailBinding.tvCapacity.text="총 주차면 : ${parking.capacity}면"
             parkingDetailBinding.tvCurr.text="현재 주차 차량 수 : ${parking.curParking}대"
@@ -69,9 +65,6 @@ class ParkingDetailActivity : AppCompatActivity() {
                 CoroutineScope(Dispatchers.Main).launch {
                     if (addresses.isNotEmpty()) {
                         val targetLoc = LatLng(addresses[0].latitude, addresses[0].longitude)
-                        Toast.makeText(this@ParkingDetailActivity,
-                            "${parking.parkingName}, ${addresses[0].latitude}, ${addresses[0].longitude}",
-                            Toast.LENGTH_SHORT).show()
                         googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(targetLoc, 12F))
                         addMarker(targetLoc, parking.parkingName, parking.capacity.toInt(), parking.curParking.toInt())
 
@@ -97,15 +90,6 @@ class ParkingDetailActivity : AppCompatActivity() {
         override fun onMapReady(map: GoogleMap) {
             googleMap = map
             Log.d(TAG, "GoogleMap is Ready")
-
-            googleMap.setOnMarkerClickListener { marker
-                -> Toast.makeText(this@ParkingDetailActivity, marker.tag.toString(), Toast.LENGTH_SHORT).show()
-                false
-            }
-
-            googleMap.setOnInfoWindowClickListener { marker ->
-                Toast.makeText(this@ParkingDetailActivity, marker.title, Toast.LENGTH_SHORT).show()
-            }
         }
     }
     fun getTime(time : String) : String{

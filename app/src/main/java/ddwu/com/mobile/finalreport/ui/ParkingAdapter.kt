@@ -22,7 +22,8 @@ class ParkingAdapter : RecyclerView.Adapter<ParkingAdapter.ParkingHolder>() {
     }
 
     override fun onBindViewHolder(holder: ParkingHolder, position: Int) {
-        holder.itemBinding.tvRow.text = parkings?.get(position).toString()
+        val cnt = parkings?.get(position)?.capacity?.minus(parkings?.get(position)?.curParking!!)
+        holder.itemBinding.tvRow.text = "${parkings?.get(position)?.parkingName} [ ${cnt}자리 남았어요 ]"
         holder.itemBinding.tvRow.setOnClickListener{
             clickListener?.onItemClick(it, position)
         }

@@ -165,26 +165,13 @@ class MyAddrActivity : AppCompatActivity() {
                                     }
                                     if (parkings != null) {
                                         for (parking in parkings){
-//                                            geocoder.getFromLocationName(parking.parkingName, totalCount.toInt()) {
-//                                                    addresses ->
-//                                                CoroutineScope(Dispatchers.Main).launch {
-//                                                    if (addresses.isNotEmpty()) {
-//                                                        val targetLoc = LatLng(addresses[0].latitude, addresses[0].longitude)
-//                                                        addMarker(targetLoc)
-//                                                    } else {
-//                                                        // 주소를 찾을 수 없는 경우에 대한 처리
-//                                                        // 예를 들어, 토스트 메시지를 표시할 수 있습니다.
-//                                                        Toast.makeText(this@MyAddrActivity, "주소를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show()
-//                                                    }
-//                                                }
-//                                            }
                                             CoroutineScope(Dispatchers.Main).launch {
                                                 val targetLoc = getLatLngFromAddress(parking.addr)
 
                                                 if (targetLoc != null) {
                                                     addMarker(targetLoc, parking.parkingName, parking.capacity.toInt(), parking.curParking.toInt())
                                                 } else {
-                                                    // 주소를 찾을 수 없는 경우에 대한 처리
+                                                    // 주소를 찾을 수 없는 경우
                                                     Toast.makeText(this@MyAddrActivity, "주소를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show()
                                                 }
                                             }
@@ -192,7 +179,6 @@ class MyAddrActivity : AppCompatActivity() {
                                     }
                                     adapter.setOnItemClickListener(object : ParkingAdapter.OnItemClickListner {
                                         override fun onItemClick(view: View, position: Int) {
-                                            // 클릭된 주차장 정보를 다음 Activity로 전달하고 해당 Activity를 시작
                                             val intent = Intent(this@MyAddrActivity, ParkingDetailActivity::class.java)
                                             intent.putExtra("PARKING", adapter.parkings?.get(position))
                                             startActivity(intent)
@@ -243,15 +229,6 @@ class MyAddrActivity : AppCompatActivity() {
         override fun onMapReady(map: GoogleMap) {
             googleMap = map
             Log.d(TAG, "GoogleMap is Ready")
-
-            googleMap.setOnMarkerClickListener { marker
-                -> Toast.makeText(this@MyAddrActivity, marker.tag.toString(), Toast.LENGTH_SHORT).show()
-                false
-            }
-
-            googleMap.setOnInfoWindowClickListener { marker ->
-                Toast.makeText(this@MyAddrActivity, marker.title, Toast.LENGTH_SHORT).show()
-            }
         }
     }
 
@@ -335,7 +312,7 @@ class MyAddrActivity : AppCompatActivity() {
                 geocoder.getFromLocation(location.latitude, location.longitude, 5){
                     addresses ->
                     CoroutineScope(Dispatchers.Main).launch {
-                        myAddrBinding.tvAddr.setText(addresses.get(0).subLocality.toString())
+                        myAddrBinding.tvAddr.text=addresses.get(0).subLocality.toString()
                     }
                 }
             }

@@ -6,17 +6,6 @@
     android:layout_height="match_parent"
     tools:context=".SearchAddrActivity">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="[가제] 파킹마킹"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.077"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.022" />
-
     <EditText
         android:id="@+id/etAddr"
         android:layout_width="0dp"
@@ -35,7 +24,9 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="48dp"
         android:layout_marginTop="72dp"
-        android:text="Search"
+        android:background="#000000"
+        android:text="찾기"
+        android:textColor="#FFEB3B"
         app:layout_constraintStart_toEndOf="@+id/etAddr"
         app:layout_constraintTop_toTopOf="parent" />
 
