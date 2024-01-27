@@ -1,6 +1,7 @@
 package ddwu.com.mobile.finalreport.data
 
 import com.google.gson.annotations.SerializedName
+import java.io.Serializable
 
 data class ParkingRoot(
     @SerializedName("GetParkingInfo")
@@ -11,7 +12,7 @@ data class GetparkingInfo(
     @SerializedName("row")
     val parkings: List<Parking>,
 )
-data class Parking(
+data class Parking (
     @SerializedName("PARKING_NAME")
     var parkingName: String,
     @SerializedName("ADDR")
@@ -42,4 +43,6 @@ data class Parking(
     var holidayBeginTime: Long,
     @SerializedName("HOLIDAY_END_TIME")
     var holidayEndTime: Long
-)
+) : Serializable
+
+

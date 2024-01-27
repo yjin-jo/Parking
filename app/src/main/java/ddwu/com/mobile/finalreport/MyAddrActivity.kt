@@ -1,13 +1,29 @@
 package ddwu.com.mobile.finalreport
 
+import android.Manifest.permission.ACCESS_COARSE_LOCATION
+import android.Manifest.permission.ACCESS_FINE_LOCATION
+import android.annotation.SuppressLint
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.location.Geocoder
+import android.location.Location
+import android.location.LocationRequest
+import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Looper
 import android.util.Log
 import android.view.View
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationResult
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+import com.google.android.gms.location.Priority.PRIORITY_HIGH_ACCURACY
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -17,12 +33,13 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import ddwu.com.mobile.finalreport.data.ParkingRoot
-
+import ddwu.com.mobile.finalreport.databinding.ActivityMyAddrBinding
 import ddwu.com.mobile.finalreport.databinding.ActivitySearchAddrBinding
 import ddwu.com.mobile.finalreport.network.ParkingAPIService
 import ddwu.com.mobile.finalreport.ui.ParkingAdapter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import retrofit2.Call
@@ -32,25 +49,34 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.Locale
 
-
-class SearchAddrActivity : AppCompatActivity() {
-    private val TAG = "SearchAddrActivity"
+class MyAddrActivity : AppCompatActivity() {
+    private val TAG = "MyAddrActivityTag"
     lateinit var searchAddrBinding : ActivitySearchAddrBinding
     lateinit var adapter : ParkingAdapter
-    private lateinit var googleMap : GoogleMap
+
+    val myAddrBinding by lazy {
+        ActivityMyAddrBinding.inflate(layoutInflater)
+    }
+
+    private lateinit var fusedLocationClient : FusedLocationProviderClient
     private lateinit var geocoder : Geocoder
+    private lateinit var currentLoc : Location
+
+    private lateinit var googleMap : GoogleMap
     var centerMarker : Marker? = null
     private lateinit var markers : List<Marker>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        searchAddrBinding = ActivitySearchAddrBinding.inflate(layoutInflater)
-        setContentView(searchAddrBinding.root)
-        geocoder = Geocoder(this)
+        setContentView(myAddrBinding.root)
+
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+        geocoder = Geocoder(this, Locale.getDefault())
+        getLastLocation()   // 최종위치 확인
 
         adapter = ParkingAdapter()
-        searchAddrBinding.rvParking.adapter = adapter
-        searchAddrBinding.rvParking.layoutManager = LinearLayoutManager(this)
+        myAddrBinding.rvParking.adapter = adapter
+        myAddrBinding.rvParking.layoutManager = LinearLayoutManager(this)
 
         val retrofit = Retrofit.Builder()
             .baseUrl(resources.getString(R.string.parking_url))
@@ -60,9 +86,20 @@ class SearchAddrActivity : AppCompatActivity() {
         val service = retrofit.create(ParkingAPIService::class.java)
         var totalCount : Long = 0
 
-        searchAddrBinding.btnSearch.setOnClickListener {
-            //주소 (**구) 입력 받기
-            val targetAddr = searchAddrBinding.etAddr.text.toString()
+        myAddrBinding.btnPermit.setOnClickListener {
+            checkPermissions()
+        }
+
+        myAddrBinding.btnLastLoc.setOnClickListener {
+            getLastLocation()
+        }
+
+        myAddrBinding.btnMyAddrBack.setOnClickListener {
+            finish()
+        }
+
+        myAddrBinding.btnSearch.setOnClickListener {
+            val targetAddr = myAddrBinding.tvAddr.text.toString()
 
             val apiCallback_getTotalCount = object: Callback<ParkingRoot> {
                 override fun onResponse(call: Call<ParkingRoot>, response: Response<ParkingRoot>) {
@@ -82,20 +119,9 @@ class SearchAddrActivity : AppCompatActivity() {
 
                         totalCount = response.body()?.getParkingInfo?.listTotalCount ?: 0
 
-                        geocoder.getFromLocationName(targetAddr, totalCount.toInt()) {
-                            addresses ->
-                            CoroutineScope(Dispatchers.Main).launch {
-                                if (addresses.isNotEmpty()) {
-                                    val targetLoc = LatLng(addresses[0].latitude, addresses[0].longitude)
-                                    googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(targetLoc, 12F))
-                                } else {
-                                    Toast.makeText(
-                                        this@SearchAddrActivity,
-                                        "해당 주소의 위치를 찾을 수 없습니다.",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
-                            }
+                        if(totalCount.toInt() == 0) {
+                            Toast.makeText(this@MyAddrActivity, "주차장이 없습니다.", Toast.LENGTH_SHORT).show()
+                            return
                         }
                         val apiCallback = object: Callback<ParkingRoot> {
                             override fun onResponse(call: Call<ParkingRoot>, response: Response<ParkingRoot>) {
@@ -116,11 +142,12 @@ class SearchAddrActivity : AppCompatActivity() {
 
                                     adapter.parkings = root?.getParkingInfo?.parkings
                                     Log.d(TAG, adapter.parkings?.get(0)?.parkingName ?: "null")
+
                                     /*주소를 위도,경도로 바꿔서 마커 표시*/
                                     suspend fun getLatLngFromAddress(address: String): LatLng? {
                                         return withContext(Dispatchers.IO) {
                                             try {
-                                                val geocoder = Geocoder(this@SearchAddrActivity, Locale.getDefault())
+                                                val geocoder = Geocoder(this@MyAddrActivity, Locale.getDefault())
                                                 val addresses = geocoder.getFromLocationName(address, 1)
 
                                                 if (addresses!!.isNotEmpty()) {
@@ -138,40 +165,26 @@ class SearchAddrActivity : AppCompatActivity() {
                                     }
                                     if (parkings != null) {
                                         for (parking in parkings){
-//                                            geocoder.getFromLocationName(parking.parkingName, totalCount.toInt()) {
-//                                                    addresses ->
-//                                                CoroutineScope(Dispatchers.Main).launch {
-//                                                    if (addresses.isNotEmpty()) {
-//                                                        val targetLoc = LatLng(addresses[0].latitude, addresses[0].longitude)
-//                                                        addMarker(targetLoc)
-//                                                    } else {
-//                                                        // 주소를 찾을 수 없는 경우에 대한 처리
-//                                                        // 예를 들어, 토스트 메시지를 표시할 수 있습니다.
-//                                                        Toast.makeText(this@MyAddrActivity, "주소를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show()
-//                                                    }
-//                                                }
-//                                            }
                                             CoroutineScope(Dispatchers.Main).launch {
                                                 val targetLoc = getLatLngFromAddress(parking.addr)
 
                                                 if (targetLoc != null) {
                                                     addMarker(targetLoc, parking.parkingName, parking.capacity.toInt(), parking.curParking.toInt())
                                                 } else {
-                                                    // 주소를 찾을 수 없는 경우에 대한 처리
-                                                    Toast.makeText(this@SearchAddrActivity, "주소를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show()
+                                                    // 주소를 찾을 수 없는 경우
+                                                    Toast.makeText(this@MyAddrActivity, "주소를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show()
                                                 }
                                             }
                                         }
-
                                     }
                                     adapter.setOnItemClickListener(object : ParkingAdapter.OnItemClickListner {
                                         override fun onItemClick(view: View, position: Int) {
-                                            // 클릭된 주차장 정보를 다음 Activity로 전달하고 해당 Activity를 시작
-                                            val intent = Intent(this@SearchAddrActivity, ParkingDetailActivity::class.java)
+                                            val intent = Intent(this@MyAddrActivity, ParkingDetailActivity::class.java)
                                             intent.putExtra("PARKING", adapter.parkings?.get(position))
                                             startActivity(intent)
                                         }
                                     })
+
                                     adapter.notifyDataSetChanged()
                                 }
                                 else {
@@ -203,17 +216,13 @@ class SearchAddrActivity : AppCompatActivity() {
             Log.d(TAG, "요청 URL: ${apiCall_1.request().url()}")
             Log.d(TAG, "요청 매개변수: key=${resources.getString(R.string.parking_key)}, addr=$targetAddr")
             apiCall_1.enqueue(apiCallback_getTotalCount)
-
         }
 
         val mapFragment : SupportMapFragment
-                = supportFragmentManager.findFragmentById(R.id.search_map) as SupportMapFragment
+        = supportFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
 
         mapFragment.getMapAsync(mapReadyCallback)
 
-        searchAddrBinding.btnSearchBack.setOnClickListener {
-            finish()
-        }
     }
 
     val mapReadyCallback = object: OnMapReadyCallback {
@@ -235,7 +244,86 @@ class SearchAddrActivity : AppCompatActivity() {
         centerMarker?.showInfoWindow()
         centerMarker?.tag = targetLoc
     }
+    fun checkPermissions() {
+        if (checkSelfPermission(ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED
+            && checkSelfPermission(ACCESS_COARSE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED) {
+                showData("Permissions are already granted")
+            } else {
+                locationPermissionRequest.launch(arrayOf(
+                    ACCESS_FINE_LOCATION,
+                    ACCESS_COARSE_LOCATION))
+        }
+    }
 
+    val locationPermissionRequest
+    = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        permissions ->
+        when {
+            permissions.getOrDefault(ACCESS_FINE_LOCATION, false) ->
+            {
+                showData("FINE_LOCATION is granted")
+            }
+            permissions.getOrDefault(ACCESS_COARSE_LOCATION, false) ->
+            {
+                showData("COARSE_LOCATION is granted")
+            }
+            else -> {
+                showData("Location permissions are required")
+            }
+        }
+    }
 
+    val locRequest : com.google.android.gms.location.LocationRequest = com.google.android.gms.location.LocationRequest.Builder(0)
+        .setMinUpdateIntervalMillis(0)
+        .setPriority(Priority.PRIORITY_BALANCED_POWER_ACCURACY)
+        .build()
 
+    val locCallback : LocationCallback = object : LocationCallback() {
+        override fun onLocationResult(locResult: LocationResult) {
+            val currentLoc : Location = locResult.locations[0]
+
+            geocoder.getFromLocation(currentLoc.latitude, currentLoc.longitude, 5) {
+                addresses ->
+                CoroutineScope(Dispatchers.Main).launch {
+                    showData(addresses.get(0).getAddressLine(0).toString())
+                }
+            }
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun startLocUpdates() {
+        fusedLocationClient.requestLocationUpdates(
+            locRequest,
+            locCallback,
+            Looper.getMainLooper()
+        )
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun getLastLocation() {
+        fusedLocationClient.getCurrentLocation(PRIORITY_HIGH_ACCURACY, null).addOnSuccessListener{
+            location ->
+            if (location != null) {
+                val targetLoc: LatLng = LatLng(location.latitude, location.longitude)
+                googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(targetLoc, 12F))
+                geocoder.getFromLocation(location.latitude, location.longitude, 5){
+                    addresses ->
+                    CoroutineScope(Dispatchers.Main).launch {
+                        myAddrBinding.tvAddr.text=addresses.get(0).subLocality.toString()
+                    }
+                }
+            }
+            else {
+                currentLoc = Location("기본 위치")      // Last Location 이 null 경우 기본으로 설정
+                currentLoc.latitude = 37.606537
+                currentLoc.longitude = 127.041758
+            }
+        }
+    }
+    private fun showData(data : String) {
+        myAddrBinding.tvData.setText(myAddrBinding.tvData.text.toString() + "\n${data}")
+    }
 }
